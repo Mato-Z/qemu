@@ -5,7 +5,8 @@
 #include "exec/windbgstub-utils.h"
 #include "exec/address-spaces.h"
 
-#define ENABLE_PARSER        WINDBG_DEBUG_ON && (ENABLE_WINDBG_PARSER || ENABLE_KERNEL_PARSER)
+#define ENABLE_PARSER        WINDBG_DEBUG_ON && \
+                             (ENABLE_WINDBG_PARSER || ENABLE_KERNEL_PARSER)
 #define ENABLE_WINDBG_PARSER true
 #define ENABLE_KERNEL_PARSER true
 #define ENABLE_FULL_HANDLER  ENABLE_PARSER && true
@@ -57,8 +58,9 @@ typedef struct WindbgState {
 
 static WindbgState *windbg_state = NULL;
 #if (ENABLE_PARSER)
-    FILE *parsed_packets;
-    FILE *parsed_api;
+static int packet_counter;
+static FILE *parsed_packets;
+static FILE *parsed_api;
 #endif
 
 void windbg_dump(const char *fmt, ...)
@@ -75,7 +77,8 @@ void windbg_dump(const char *fmt, ...)
   #endif
 }
 
-static void windbg_send_data_packet(uint8_t *data, uint16_t byte_count, uint16_t type)
+static void windbg_send_data_packet(uint8_t *data, uint16_t byte_count,
+                                    uint16_t type)
 {
     uint8_t trailing_byte = PACKET_TRAILING_BYTE;
 
@@ -89,7 +92,8 @@ static void windbg_send_data_packet(uint8_t *data, uint16_t byte_count, uint16_t
 
     qemu_chr_fe_write(windbg_state->chr, PTR(packet), sizeof(packet));
     qemu_chr_fe_write(windbg_state->chr, data, byte_count);
-    qemu_chr_fe_write(windbg_state->chr, &trailing_byte, sizeof(trailing_byte));
+    qemu_chr_fe_write(windbg_state->chr, &trailing_byte,
+                      sizeof(trailing_byte));
 
     windbg_state->data_packet_id ^= 1;
 }
@@ -438,26 +442,30 @@ static void windbg_debug_ctx_handler(ParsingContext *ctx, FILE *out)
         return;
     }
 
-    fprintf(out, "FROM: %s\n", ctx->name);
+    fprintf(out, "FROM: %s : %d\n", ctx->name, packet_counter);
     switch (ctx->result) {
     case RESULT_BREAKIN_BYTE:
         fprintf(out, "CATCH BREAKING BYTE\n");
         break;
 
     case RESULT_UNKNOWN_PACKET:
-        fprintf(out, "ERROR: CATCH UNKNOWN PACKET TYPE: 0x%x\n", ctx->packet.PacketType);
+        fprintf(out, "ERROR: CATCH UNKNOWN PACKET TYPE: 0x%x\n",
+                ctx->packet.PacketType);
         break;
 
     case RESULT_CONTROL_PACKET:
-        fprintf(out, "CATCH CONTROL PACKET: %s\n", kd_get_packet_type_name(ctx->packet.PacketType));
+        fprintf(out, "CATCH CONTROL PACKET: %s\n",
+                kd_get_packet_type_name(ctx->packet.PacketType));
         break;
 
     case RESULT_DATA_PACKET:
-        fprintf(out, "CATCH DATA PACKET: %s\n", kd_get_packet_type_name(ctx->packet.PacketType));
+        fprintf(out, "CATCH DATA PACKET: %s\n",
+                kd_get_packet_type_name(ctx->packet.PacketType));
         fprintf(out, "Byte Count: %d\n", ctx->packet.ByteCount);
 
         if (ctx->packet.PacketType == PACKET_TYPE_KD_STATE_MANIPULATE) {
-            fprintf(out, "Api: %s\n", kd_get_api_name(ctx->data.m64.ApiNumber));
+            fprintf(out, "Api: %s\n",
+                    kd_get_api_name(ctx->data.m64.ApiNumber));
         }
 
         int i;
@@ -497,7 +505,8 @@ static void windbg_debug_ctx_handler_api(ParsingContext *ctx, FILE *out)
 
     case RESULT_DATA_PACKET:
         if (ctx->packet.PacketType == PACKET_TYPE_KD_STATE_MANIPULATE) {
-            fprintf(out, "%s: %s\n", ctx->name, kd_get_api_name(ctx->data.m64.ApiNumber));
+            fprintf(out, "%s: %d : %s\n", ctx->name, packet_counter,
+                    kd_get_api_name(ctx->data.m64.ApiNumber));
         }
         break;
 
@@ -508,12 +517,14 @@ static void windbg_debug_ctx_handler_api(ParsingContext *ctx, FILE *out)
  #endif
 }
 
-static void windbg_debug_parser(ParsingContext *ctx, const uint8_t *buf, int len)
+static void windbg_debug_parser(ParsingContext *ctx, const uint8_t *buf,
+                                int len)
 {
     int i;
     for (i = 0; i < len; ++i) {
         windbg_read_byte(ctx, buf[i]);
         if (ctx->result != RESULT_NONE) {
+            packet_counter++;
             windbg_debug_open_files();
             windbg_debug_ctx_handler(ctx, parsed_packets);
             windbg_debug_ctx_handler_api(ctx, parsed_api);
@@ -549,7 +560,7 @@ void windbg_debug_parser_hook(bool is_kernel, const uint8_t *buf, int len)
  #endif
 }
 
-void windbg_start_sync(void)
+void windbg_try_load(void)
 {
     if (windbg_state && !windbg_state->is_loaded) {
         windbg_state->is_loaded = windbg_on_load();
@@ -569,7 +580,7 @@ static void windbg_exit(void)
     g_free(windbg_state);
 }
 
-int windbg_start(const char *device)
+int windbg_server_start(const char *device)
 {
     if (windbg_state) {
         WINDBG_ERROR("Multiple instances are not supported");

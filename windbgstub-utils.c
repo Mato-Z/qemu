@@ -382,7 +382,8 @@ static int windbg_hw_breakpoint_insert(CPUState *cpu, int index)
     }
 
     if (!err) {
-        WINDBG_DEBUG("hw_breakpoint_insert: index(%d), " FMT_ADDR, index, addr);
+        WINDBG_DEBUG("hw_breakpoint_insert: index(%d), " FMT_ADDR,
+                     index, addr);
     }
     else {
         env->cpu_breakpoint[index] = NULL;
@@ -414,7 +415,8 @@ static int windbg_hw_breakpoint_remove(CPUState *cpu, int index)
     }
 
     env->cpu_breakpoint[index] = NULL;
-    WINDBG_DEBUG("hw_breakpoint_remove: index(%d), " FMT_ADDR, index, env->dr[index]);
+    WINDBG_DEBUG("hw_breakpoint_remove: index(%d), " FMT_ADDR,
+                 index, env->dr[index]);
     return 0;
 }
 
@@ -492,7 +494,8 @@ static void windbg_set_sr(CPUState *cpu, int sr, uint16_t selector)
 
 #endif
 
-static int windbg_read_context(CPUState *cpu, uint8_t *buf, int len, int offset)
+static int windbg_read_context(CPUState *cpu, uint8_t *buf, int len,
+                               int offset)
 {
     const bool new_mem = (len != sizeof(CPU_CONTEXT) || offset != 0);
     CPUArchState *env = cpu->env_ptr;
@@ -633,7 +636,8 @@ static int windbg_read_context(CPUState *cpu, uint8_t *buf, int len, int offset)
     return err;
 }
 
-static int windbg_write_context(CPUState *cpu, uint8_t *buf, int len, int offset)
+static int windbg_write_context(CPUState *cpu, uint8_t *buf, int len,
+                                int offset)
 {
   #ifdef TARGET_X86_64 // Unimplemented yet
     return 0;
@@ -683,7 +687,8 @@ static int windbg_write_context(CPUState *cpu, uint8_t *buf, int len, int offset
 
         case offsetof(CPU_CONTEXT, FloatSave.ControlWord):
             mem_size = sizeof_field(CPU_CONTEXT, FloatSave.ControlWord);
-            cpu_set_fpuc(env, *FIELD_P(CPU_CONTEXT, FloatSave.ControlWord, mem_ptr));
+            cpu_set_fpuc(env, *FIELD_P(CPU_CONTEXT, FloatSave.ControlWord,
+                                       mem_ptr));
             memcpy(PTR(env->fpuc), mem_ptr, mem_size);
             break;
 
@@ -841,10 +846,12 @@ static int windbg_write_context(CPUState *cpu, uint8_t *buf, int len, int offset
   #endif
 }
 
-static int windbg_read_ks_regs(CPUState *cpu, uint8_t *buf, int len, int offset)
+static int windbg_read_ks_regs(CPUState *cpu, uint8_t *buf, int len,
+                               int offset)
 {
     CPUArchState *env = cpu->env_ptr;
-    const bool new_mem = (len != sizeof(CPU_KSPECIAL_REGISTERS) || offset != 0);
+    const bool new_mem = (len != sizeof(CPU_KSPECIAL_REGISTERS)
+                       || offset != 0);
     CPU_KSPECIAL_REGISTERS *ckr;
     if (new_mem) {
         ckr = (CPU_KSPECIAL_REGISTERS *) g_malloc(sizeof(CPU_KSPECIAL_REGISTERS));
@@ -909,7 +916,8 @@ static int windbg_read_ks_regs(CPUState *cpu, uint8_t *buf, int len, int offset)
     return 0;
 }
 
-static int windbg_write_ks_regs(CPUState *cpu, uint8_t *buf, int len, int offset)
+static int windbg_write_ks_regs(CPUState *cpu, uint8_t *buf, int len,
+                                int offset)
 {
   #ifdef TARGET_X86_64 // Unimplemented yet
     return 0;
@@ -924,7 +932,8 @@ static int windbg_write_ks_regs(CPUState *cpu, uint8_t *buf, int len, int offset
 
         case offsetof(CPU_KSPECIAL_REGISTERS, Cr0):
             mem_size = sizeof_field(CPU_KSPECIAL_REGISTERS, Cr0);
-            cpu_x86_update_cr0(env, *FIELD_P(CPU_KSPECIAL_REGISTERS, Cr0, mem_ptr));
+            cpu_x86_update_cr0(env, *FIELD_P(CPU_KSPECIAL_REGISTERS, Cr0,
+                                             mem_ptr));
             break;
 
         case offsetof(CPU_KSPECIAL_REGISTERS, Cr2):
@@ -934,12 +943,14 @@ static int windbg_write_ks_regs(CPUState *cpu, uint8_t *buf, int len, int offset
 
         case offsetof(CPU_KSPECIAL_REGISTERS, Cr3):
             mem_size = sizeof_field(CPU_KSPECIAL_REGISTERS, Cr3);
-            cpu_x86_update_cr3(env, *FIELD_P(CPU_KSPECIAL_REGISTERS, Cr3, mem_ptr));
+            cpu_x86_update_cr3(env, *FIELD_P(CPU_KSPECIAL_REGISTERS, Cr3,
+                                             mem_ptr));
             break;
 
         case offsetof(CPU_KSPECIAL_REGISTERS, Cr4):
             mem_size = sizeof_field(CPU_KSPECIAL_REGISTERS, Cr4);
-            cpu_x86_update_cr4(env, *FIELD_P(CPU_KSPECIAL_REGISTERS, Cr4, mem_ptr));
+            cpu_x86_update_cr4(env, *FIELD_P(CPU_KSPECIAL_REGISTERS, Cr4,
+                                             mem_ptr));
             break;
 
         case offsetof(CPU_KSPECIAL_REGISTERS, KernelDr0):
@@ -1103,7 +1114,8 @@ void kd_api_write_breakpoint(CPUState *cpu, PacketData *pd)
                 break;
             }
             else {
-                WINDBG_ERROR("write_breakpoint: " FMT_ADDR ", " FMT_ERR, addr, err);
+                WINDBG_ERROR("write_breakpoint: " FMT_ADDR ", " FMT_ERR,
+                             addr, err);
                 pd->m64.ReturnStatus = STATUS_UNSUCCESSFUL;
                 return;
             }
@@ -1136,8 +1148,8 @@ void kd_api_restore_breakpoint(CPUState *cpu, PacketData *pd)
                          kd.bps[index].addr, index);
         }
         else {
-            WINDBG_ERROR("restore_breakpoint: " FMT_ADDR ", index(%d), " FMT_ERR,
-                         kd.bps[index].addr, index, err);
+            WINDBG_ERROR("restore_breakpoint: " FMT_ADDR ", index(%d), "
+                         FMT_ERR, kd.bps[index].addr, index, err);
         }
         kd.bps[index].is_init = false;
         pd->m64.ReturnStatus = STATUS_SUCCESS;
@@ -1184,7 +1196,8 @@ void kd_api_read_control_space(CPUState *cpu, PacketData *pd)
         break;
 
     case AMD64_DEBUG_CONTROL_SPACE_KSPECIAL:
-        mem->ActualBytesRead = MIN(mem->ActualBytesRead, sizeof(CPU_KSPECIAL_REGISTERS));
+        mem->ActualBytesRead = MIN(mem->ActualBytesRead,
+                                   sizeof(CPU_KSPECIAL_REGISTERS));
         err = windbg_read_ks_regs(cpu, pd->extra, 0, mem->ActualBytesRead);
         break;
 
@@ -1196,16 +1209,19 @@ void kd_api_read_control_space(CPUState *cpu, PacketData *pd)
     }
 
     if (from != 0) {
-        err = cpu_memory_rw_debug(cpu, from, pd->extra, mem->ActualBytesRead, 0);
+        err = cpu_memory_rw_debug(cpu, from, pd->extra,
+                                  mem->ActualBytesRead, 0);
     }
 
   #else
 
     if (mem->TargetBaseAddress < sizeof(CPU_KPROCESSOR_STATE)) {
         mem->ActualBytesRead = MIN(mem->ActualBytesRead,
-                                   sizeof(CPU_KPROCESSOR_STATE) - mem->TargetBaseAddress);
+                                   sizeof(CPU_KPROCESSOR_STATE) -
+                                   mem->TargetBaseAddress);
 
-        int from_context = MAX(0, (int) sizeof(CPU_CONTEXT) - (int) mem->TargetBaseAddress);
+        int from_context = MAX(0, (int) sizeof(CPU_CONTEXT) -
+                                  (int) mem->TargetBaseAddress);
         int from_ks_regs = mem->ActualBytesRead - from_context;
 
 
@@ -1214,8 +1230,9 @@ void kd_api_read_control_space(CPUState *cpu, PacketData *pd)
                                       mem->TargetBaseAddress);
         }
         if (from_ks_regs > 0) {
-            err = windbg_read_ks_regs(cpu, pd->extra + from_context, from_ks_regs,
-                                      mem->TargetBaseAddress - sizeof(CPU_CONTEXT) + from_context);
+            err = windbg_read_ks_regs(cpu, pd->extra + from_context,
+                                      from_ks_regs, mem->TargetBaseAddress -
+                                      sizeof(CPU_CONTEXT) + from_context);
         }
     }
 
@@ -1240,7 +1257,8 @@ void kd_api_write_control_space(CPUState *cpu, PacketData *pd)
   #ifdef TARGET_X86_64
 
     if (mem->TargetBaseAddress == AMD64_DEBUG_CONTROL_SPACE_KSPECIAL) {
-        mem->ActualBytesWritten = MIN(mem->ActualBytesWritten, sizeof(CPU_KSPECIAL_REGISTERS));
+        mem->ActualBytesWritten = MIN(mem->ActualBytesWritten,
+                                      sizeof(CPU_KSPECIAL_REGISTERS));
         err = windbg_write_ks_regs(cpu, pd->extra, 0, mem->ActualBytesWritten);
     }
 
@@ -1248,10 +1266,12 @@ void kd_api_write_control_space(CPUState *cpu, PacketData *pd)
 
     if (mem->TargetBaseAddress < sizeof(CPU_KPROCESSOR_STATE)) {
         mem->ActualBytesWritten = MIN(pd->extra_size, mem->TransferCount);
-        mem->ActualBytesWritten = MIN(mem->ActualBytesWritten,
-                                      sizeof(CPU_KPROCESSOR_STATE) - mem->TargetBaseAddress);
+        mem->ActualBytesWritten =
+            MIN(mem->ActualBytesWritten,
+                sizeof(CPU_KPROCESSOR_STATE)- mem->TargetBaseAddress);
 
-        int to_context = MAX(0, (int) sizeof(CPU_CONTEXT) - (int) mem->TargetBaseAddress);
+        int to_context = MAX(0, (int) sizeof(CPU_CONTEXT) -
+                                (int) mem->TargetBaseAddress);
         int to_ks_regs = mem->ActualBytesWritten - to_context;
 
 
@@ -1261,7 +1281,8 @@ void kd_api_write_control_space(CPUState *cpu, PacketData *pd)
         }
         if (to_ks_regs > 0) {
             err = windbg_write_ks_regs(cpu, pd->extra + to_context, to_ks_regs,
-                                       mem->TargetBaseAddress - sizeof(CPU_CONTEXT) + to_context);
+                                       mem->TargetBaseAddress -
+                                       sizeof(CPU_CONTEXT) + to_context);
         }
     }
 
@@ -1679,7 +1700,8 @@ void kd_api_search_memory(CPUState *cpu, PacketData *pd)
 
     uint8_t mem[s_len - 1 + p_len];
 
-    int err = cpu_memory_rw_debug(cpu, m64c->SearchAddress, mem, sizeof(mem), 0);
+    int err = cpu_memory_rw_debug(cpu, m64c->SearchAddress, mem,
+                                  sizeof(mem), 0);
     if (!err) {
         int i;
         pd->m64.ReturnStatus = STATUS_NO_MORE_ENTRIES;
@@ -1755,26 +1777,30 @@ void kd_api_unsupported(CPUState *cpu, PacketData *pd)
     exit(1);
 }
 
-static void kd_breakpoint_remove_range(CPUState *cpu, target_ulong base, target_ulong limit)
+static void kd_breakpoint_remove_range(CPUState *cpu, target_ulong base,
+                                       target_ulong limit)
 {
     int i = 0, err = 0;
     for (; i < KD_BREAKPOINT_MAX; ++i) {
-        if (kd.bps[i].is_init && kd.bps[i].addr >= base && kd.bps[i].addr < limit) {
+        if (kd.bps[i].is_init && kd.bps[i].addr >= base &&
+            kd.bps[i].addr < limit) {
             err = cpu_breakpoint_remove(cpu, kd.bps[i].addr, BP_GDB);
             if (!err) {
-                WINDBG_DEBUG("breakpoint_remove_range: " FMT_ADDR ", index(%d)",
-                            kd.bps[i].addr, i);
+                WINDBG_DEBUG("breakpoint_remove_range: " FMT_ADDR
+                             ", index(%d)", kd.bps[i].addr, i);
             }
             else {
-                WINDBG_ERROR("breakpoint_remove_range: " FMT_ADDR ", index(%d), " FMT_ERR,
-                            kd.bps[i].addr, i, err);
+                WINDBG_ERROR("breakpoint_remove_range: " FMT_ADDR
+                             ", index(%d), " FMT_ERR,
+                             kd.bps[i].addr, i, err);
             }
             kd.bps[i].is_init = false;
         }
     }
 }
 
-static void kd_init_state_change(CPUState *cpu, DBGKD_ANY_WAIT_STATE_CHANGE *sc)
+static void kd_init_state_change(CPUState *cpu,
+                                 DBGKD_ANY_WAIT_STATE_CHANGE *sc)
 {
     CPUArchState *env = cpu->env_ptr;
     int err = 0;
@@ -1784,8 +1810,10 @@ static void kd_init_state_change(CPUState *cpu, DBGKD_ANY_WAIT_STATE_CHANGE *sc)
     // sc->ProcessorLevel = 0x6;
     sc->Processor = 0;
     sc->NumberProcessors = cpu_amount;
-    target_ulong KPRCB = FROM_VADDR(cpu, kd.KPCR.addr + OFFSET_KPRCB, target_ulong);
-    sc->Thread = FROM_VADDR(cpu, KPRCB + OFFSET_KPRCB_CURRTHREAD, target_ulong);
+    target_ulong KPRCB = FROM_VADDR(cpu, kd.KPCR.addr +
+                                         OFFSET_KPRCB, target_ulong);
+    sc->Thread = FROM_VADDR(cpu, KPRCB + OFFSET_KPRCB_CURRTHREAD,
+                            target_ulong);
     sc->ProgramCounter = env->eip;
 
     // CONTROL REPORT
@@ -1820,27 +1848,28 @@ SizedBuf kd_gen_exception_sc(CPUState *cpu)
 
     sc->NewState = DbgKdExceptionStateChange;
 
-    sc->u.Exception.ExceptionRecord.ExceptionCode = 0x80000003;
-    // sc->u.Exception.ExceptionRecord.ExceptionFlags = 0x0;
-    // sc->u.Exception.ExceptionRecord.ExceptionRecord = 0x0;
-    sc->u.Exception.ExceptionRecord.ExceptionAddress = env->eip;
-    // sc->u.Exception.ExceptionRecord.NumberParameters = 0x3;
-    // sc->u.Exception.ExceptionRecord.__unusedAligment = 0x80;
-    // sc->u.Exception.ExceptionRecord.ExceptionInformation[1] = 0xffffffff82966340;
-    // sc->u.Exception.ExceptionRecord.ExceptionInformation[2] = 0xffffffff82959adc;
-    // sc->u.Exception.ExceptionRecord.ExceptionInformation[3] = 0xc0;
-    // sc->u.Exception.ExceptionRecord.ExceptionInformation[4] = 0xffffffffc020360c;
-    // sc->u.Exception.ExceptionRecord.ExceptionInformation[5] = 0x80;
-    // sc->u.Exception.ExceptionRecord.ExceptionInformation[6] = 0x0;
-    // sc->u.Exception.ExceptionRecord.ExceptionInformation[7] = 0x0;
-    // sc->u.Exception.ExceptionRecord.ExceptionInformation[8] = 0xffffffff82870d08;
-    // sc->u.Exception.ExceptionRecord.ExceptionInformation[9] = 0xffffffff82959aec;
-    // sc->u.Exception.ExceptionRecord.ExceptionInformation[10] = 0xffffffff82853508;
-    // sc->u.Exception.ExceptionRecord.ExceptionInformation[11] = 0xffffffffbadb0d00;
-    // sc->u.Exception.ExceptionRecord.ExceptionInformation[12] = 0xffffffff82959adc;
-    // sc->u.Exception.ExceptionRecord.ExceptionInformation[13] = 0xffffffff82959aa4;
-    // sc->u.Exception.ExceptionRecord.ExceptionInformation[14] = 0xffffffff828d9d15;
-    // sc->u.Exception.FirstChance = 0x1;
+    DBGKM_EXCEPTION64 *exc = &sc->u.Exception;
+    exc->ExceptionRecord.ExceptionCode = 0x80000003;
+    // exc->ExceptionRecord.ExceptionFlags = 0x0;
+    // exc->ExceptionRecord.ExceptionRecord = 0x0;
+    exc->ExceptionRecord.ExceptionAddress = env->eip;
+    // exc->ExceptionRecord.NumberParameters = 0x3;
+    // exc->ExceptionRecord.__unusedAligment = 0x80;
+    // exc->ExceptionRecord.ExceptionInformation[1] = 0xffffffff82966340;
+    // exc->ExceptionRecord.ExceptionInformation[2] = 0xffffffff82959adc;
+    // exc->ExceptionRecord.ExceptionInformation[3] = 0xc0;
+    // exc->ExceptionRecord.ExceptionInformation[4] = 0xffffffffc020360c;
+    // exc->ExceptionRecord.ExceptionInformation[5] = 0x80;
+    // exc->ExceptionRecord.ExceptionInformation[6] = 0x0;
+    // exc->ExceptionRecord.ExceptionInformation[7] = 0x0;
+    // exc->ExceptionRecord.ExceptionInformation[8] = 0xffffffff82870d08;
+    // exc->ExceptionRecord.ExceptionInformation[9] = 0xffffffff82959aec;
+    // exc->ExceptionRecord.ExceptionInformation[10] = 0xffffffff82853508;
+    // exc->ExceptionRecord.ExceptionInformation[11] = 0xffffffffbadb0d00;
+    // exc->ExceptionRecord.ExceptionInformation[12] = 0xffffffff82959adc;
+    // exc->ExceptionRecord.ExceptionInformation[13] = 0xffffffff82959aa4;
+    // exc->ExceptionRecord.ExceptionInformation[14] = 0xffffffff828d9d15;
+    // exc->FirstChance = 0x1;
 
     // UINT32_P(buf.data + sizeof(DBGKD_ANY_WAIT_STATE_CHANGE))[0] = 0x1;
 
@@ -1886,14 +1915,16 @@ bool windbg_on_load(void)
         }
         prev_KPCR = kd.KPCR.addr;
 
-        if (kd.KPCR.addr != FROM_VADDR(cpu, kd.KPCR.addr + OFFSET_SELF_PCR, target_ulong)) {
+        if (kd.KPCR.addr != FROM_VADDR(cpu, kd.KPCR.addr + OFFSET_SELF_PCR,
+                                       target_ulong)) {
             return false;
         }
 
         kd.KPCR.is_init = true;
     }
 
-    kd.version.addr = FROM_VADDR(cpu, kd.KPCR.addr + OFFSET_VERS, target_ulong);
+    kd.version.addr = FROM_VADDR(cpu, kd.KPCR.addr + OFFSET_VERS,
+                                 target_ulong);
     if (!kd.version.addr) {
         return false;
     }

@@ -139,7 +139,7 @@ void kd_api_get_version(CPUState *cpu, PacketData *pd);
 // void kd_api_write_breakpoint_ex(CPUState *cpu, PacketData *pd);
 // void kd_api_restore_breakpoint_ex(CPUState *cpu, PacketData *pd);
 // void kd_api_cause_bug_check(CPUState *cpu, PacketData *pd);
-// void kd_api_switch_processor(CPUState *cpu, PacketData *pd); unused
+// void kd_api_switch_processor(CPUState *cpu, PacketData *pd);
 // void kd_api_page_in(CPUState *cpu, PacketData *pd);
 void kd_api_read_msr(CPUState *cpu, PacketData *pd);
 void kd_api_write_msr(CPUState *cpu, PacketData *pd);
@@ -149,7 +149,7 @@ void kd_api_search_memory(CPUState *cpu, PacketData *pd);
 // void kd_api_get_bus_data(CPUState *cpu, PacketData *pd);
 // void kd_api_set_bus_data(CPUState *cpu, PacketData *pd);
 // void kd_api_check_low_memory(CPUState *cpu, PacketData *pd);
-// void kd_api_clear_all_internal_breakpoints(CPUState *cpu, PacketData *pd); unused
+// void kd_api_clear_all_internal_breakpoints(CPUState *cpu, PacketData *pd);
 void kd_api_fill_memory(CPUState *cpu, PacketData *pd);
 void kd_api_query_memory(CPUState *cpu, PacketData *pd);
 // void kd_api_switch_partition(CPUState *cpu, PacketData *pd);

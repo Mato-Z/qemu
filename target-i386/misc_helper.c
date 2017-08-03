@@ -383,6 +383,8 @@ void helper_wrmsr(CPUX86State *env)
         /* XXX: exception? */
         break;
     }
+
+    windbg_try_load();
 }
 
 void helper_rdmsr(CPUX86State *env)
@@ -531,8 +533,6 @@ void helper_rdmsr(CPUX86State *env)
     }
     env->regs[R_EAX] = (uint32_t)(val);
     env->regs[R_EDX] = (uint32_t)(val >> 32);
-
-    windbg_start_sync();
 }
 #endif
 
