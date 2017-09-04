@@ -77,6 +77,13 @@ void windbg_dump(const char *fmt, ...)
   #endif
 }
 
+static uint32_t compute_checksum(uint8_t *data, uint16_t len)
+{
+    uint32_t checksum = 0;
+    for (; len; --len, checksum += *data++);
+    return checksum;
+}
+
 static void windbg_send_data_packet(uint8_t *data, uint16_t byte_count,
                                     uint16_t type)
 {
@@ -138,8 +145,7 @@ static void windbg_process_manipulate_packet(ParsingContext *ctx)
     ctx->data.extra_size = ctx->packet.ByteCount - M64_SIZE;
     ctx->data.m64.ReturnStatus = STATUS_SUCCESS;
 
-    CPUState *cpu = qemu_get_cpu(ctx->data.m64.Processor < get_cpu_amount() ?
-                                 ctx->data.m64.Processor : 0);
+    CPUState *cpu = qemu_get_cpu(ctx->data.m64.Processor);
 
     switch(ctx->data.m64.ApiNumber) {
 

@@ -165,7 +165,4 @@ void windbg_dump(const char *fmt, ...);
 bool windbg_on_load(void);
 void windbg_on_exit(void);
 
-uint32_t compute_checksum(uint8_t *data, uint16_t len);
-uint8_t get_cpu_amount(void);
-
 #endif

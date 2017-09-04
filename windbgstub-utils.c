@@ -281,7 +281,6 @@ typedef struct KDData {
 } KDData;
 
 static KDData kd;
-static uint8_t cpu_amount;
 
 static const char *kd_api_names[] = {
     "DbgKdReadVirtualMemoryApi",
@@ -1809,7 +1808,10 @@ static void kd_init_state_change(CPUState *cpu,
 
     // sc->ProcessorLevel = 0x6;
     sc->Processor = 0;
-    sc->NumberProcessors = cpu_amount;
+    sc->NumberProcessors = 0;
+    CPU_FOREACH(cpu) {
+        sc->NumberProcessors++;
+    }
     target_ulong KPRCB = FROM_VADDR(cpu, kd.KPCR.addr +
                                          OFFSET_KPRCB, target_ulong);
     sc->Thread = FROM_VADDR(cpu, KPRCB + OFFSET_KPRCB_CURRTHREAD,
@@ -1923,39 +1925,23 @@ bool windbg_on_load(void)
         kd.KPCR.is_init = true;
     }
 
-    kd.version.addr = FROM_VADDR(cpu, kd.KPCR.addr + OFFSET_VERS,
-                                 target_ulong);
-    if (!kd.version.addr) {
-        return false;
+    if (!kd.version.is_init) {
+        kd.version.addr = FROM_VADDR(cpu, kd.KPCR.addr + OFFSET_VERS,
+                                     target_ulong);
+        if (!kd.version.addr) {
+            return false;
+        }
+        kd.version.is_init = true;
     }
-    kd.version.is_init = true;
 
     WINDBG_DEBUG("windbg_on_load: KPCR " FMT_ADDR, kd.KPCR.addr);
     WINDBG_DEBUG("windbg_on_load: version " FMT_ADDR, kd.version.addr);
-
-    cpu_amount = 0;
-    CPU_FOREACH(cpu) {
-        ++cpu_amount;
-    }
-    WINDBG_DEBUG("windbg_on_load: cpu_amount:%d", cpu_amount);
 
     return true;
 }
 
 void windbg_on_exit(void)
 {
-}
-
-uint32_t compute_checksum(uint8_t *data, uint16_t length)
-{
-    uint32_t checksum = 0;
-    for (; length; --length, checksum += *data++);
-    return checksum;
-}
-
-uint8_t get_cpu_amount(void)
-{
-    return cpu_amount;
 }
 
 const char *kd_get_api_name(int id)
