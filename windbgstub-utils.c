@@ -282,72 +282,6 @@ typedef struct KDData {
 
 static KDData kd;
 
-static const char *kd_api_names[] = {
-    "DbgKdReadVirtualMemoryApi",
-    "DbgKdWriteVirtualMemoryApi",
-    "DbgKdGetContextApi",
-    "DbgKdSetContextApi",
-    "DbgKdWriteBreakPointApi",
-    "DbgKdRestoreBreakPointApi",
-    "DbgKdContinueApi",
-    "DbgKdReadControlSpaceApi",
-    "DbgKdWriteControlSpaceApi",
-    "DbgKdReadIoSpaceApi",
-    "DbgKdWriteIoSpaceApi",
-    "DbgKdRebootApi",
-    "DbgKdContinueApi2",
-    "DbgKdReadPhysicalMemoryApi",
-    "DbgKdWritePhysicalMemoryApi",
-    "DbgKdQuerySpecialCallsApi",
-    "DbgKdSetSpecialCallApi",
-    "DbgKdClearSpecialCallsApi",
-    "DbgKdSetInternalBreakPointApi",
-    "DbgKdGetInternalBreakPointApi",
-    "DbgKdReadIoSpaceExtendedApi",
-    "DbgKdWriteIoSpaceExtendedApi",
-    "DbgKdGetVersionApi",
-    "DbgKdWriteBreakPointExApi",
-    "DbgKdRestoreBreakPointExApi",
-    "DbgKdCauseBugCheckApi",
-    "",
-    "",
-    "",
-    "",
-    "",
-    "",
-    "DbgKdSwitchProcessor",
-    "DbgKdPageInApi",
-    "DbgKdReadMachineSpecificRegister",
-    "DbgKdWriteMachineSpecificRegister",
-    "OldVlm1",
-    "OldVlm2",
-    "DbgKdSearchMemoryApi",
-    "DbgKdGetBusDataApi",
-    "DbgKdSetBusDataApi",
-    "DbgKdCheckLowMemoryApi",
-    "DbgKdClearAllInternalBreakpointsApi",
-    "DbgKdFillMemoryApi",
-    "DbgKdQueryMemoryApi",
-    "DbgKdSwitchPartition",
-    "DbgKdUnknownApi"
-};
-
-static const char *kd_packet_type_names[] = {
-    "PACKET_TYPE_UNUSED",
-    "PACKET_TYPE_KD_STATE_CHANGE32",
-    "PACKET_TYPE_KD_STATE_MANIPULATE",
-    "PACKET_TYPE_KD_DEBUG_IO",
-    "PACKET_TYPE_KD_ACKNOWLEDGE",
-    "PACKET_TYPE_KD_RESEND",
-    "PACKET_TYPE_KD_RESET",
-    "PACKET_TYPE_KD_STATE_CHANGE64",
-    "PACKET_TYPE_KD_POLL_BREAKIN",
-    "PACKET_TYPE_KD_TRACE_IO",
-    "PACKET_TYPE_KD_CONTROL_REQUEST",
-    "PACKET_TYPE_KD_FILE_IO",
-    "PACKET_TYPE_MAX"
-};
-
 static int windbg_hw_breakpoint_insert(CPUState *cpu, int index)
 {
     CPUArchState *env = cpu->env_ptr;
@@ -1190,7 +1124,7 @@ void kd_api_read_control_space(CPUState *cpu, PacketData *pd)
         break;
 
     case AMD64_DEBUG_CONTROL_SPACE_KPRCB:
-        from = FROM_VADDR(cpu, kd.KPCR.addr + OFFSET_KPRCB, target_ulong);
+        from = READ_VMEM(cpu, kd.KPCR.addr + OFFSET_KPRCB, target_ulong);
         mem->ActualBytesRead = sizeof(target_ulong);
         break;
 
@@ -1201,8 +1135,8 @@ void kd_api_read_control_space(CPUState *cpu, PacketData *pd)
         break;
 
     case AMD64_DEBUG_CONTROL_SPACE_KTHREAD:
-        from = FROM_VADDR(cpu, kd.KPCR.addr + OFFSET_KPRCB, target_ulong);
-        from = FROM_VADDR(cpu, from + OFFSET_KPRCB_CURRTHREAD, target_ulong);
+        from = READ_VMEM(cpu, kd.KPCR.addr + OFFSET_KPRCB, target_ulong);
+        from = READ_VMEM(cpu, from + OFFSET_KPRCB_CURRTHREAD, target_ulong);
         mem->ActualBytesRead = sizeof(target_ulong);
         break;
     }
@@ -1769,7 +1703,7 @@ void kd_api_query_memory(CPUState *cpu, PacketData *pd)
 void kd_api_unsupported(CPUState *cpu, PacketData *pd)
 {
     WINDBG_ERROR("Catched unimplemented api %s",
-                 kd_get_api_name(pd->m64.ApiNumber));
+                 KD_API_NAME(pd->m64.ApiNumber));
     pd->m64.ReturnStatus = STATUS_UNSUCCESSFUL;
     pd->extra_size = 0;
 
@@ -1812,9 +1746,9 @@ static void kd_init_state_change(CPUState *cpu,
     CPU_FOREACH(cpu) {
         sc->NumberProcessors++;
     }
-    target_ulong KPRCB = FROM_VADDR(cpu, kd.KPCR.addr +
+    target_ulong KPRCB = READ_VMEM(cpu, kd.KPCR.addr +
                                          OFFSET_KPRCB, target_ulong);
-    sc->Thread = FROM_VADDR(cpu, KPRCB + OFFSET_KPRCB_CURRTHREAD,
+    sc->Thread = READ_VMEM(cpu, KPRCB + OFFSET_KPRCB_CURRTHREAD,
                             target_ulong);
     sc->ProgramCounter = env->eip;
 
@@ -1917,7 +1851,7 @@ bool windbg_on_load(void)
         }
         prev_KPCR = kd.KPCR.addr;
 
-        if (kd.KPCR.addr != FROM_VADDR(cpu, kd.KPCR.addr + OFFSET_SELF_PCR,
+        if (kd.KPCR.addr != READ_VMEM(cpu, kd.KPCR.addr + OFFSET_SELF_PCR,
                                        target_ulong)) {
             return false;
         }
@@ -1926,7 +1860,7 @@ bool windbg_on_load(void)
     }
 
     if (!kd.version.is_init) {
-        kd.version.addr = FROM_VADDR(cpu, kd.KPCR.addr + OFFSET_VERS,
+        kd.version.addr = READ_VMEM(cpu, kd.KPCR.addr + OFFSET_VERS,
                                      target_ulong);
         if (!kd.version.addr) {
             return false;
@@ -1942,16 +1876,4 @@ bool windbg_on_load(void)
 
 void windbg_on_exit(void)
 {
-}
-
-const char *kd_get_api_name(int id)
-{
-    return (id >= DbgKdMinimumManipulate && id < DbgKdMaximumManipulate) ?
-            kd_api_names[id - DbgKdMinimumManipulate] :
-            kd_api_names[DbgKdMaximumManipulate - DbgKdMinimumManipulate];
-}
-
-const char *kd_get_packet_type_name(int id)
-{
-    return kd_packet_type_names[id];
 }

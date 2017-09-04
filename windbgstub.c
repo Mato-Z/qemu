@@ -3,7 +3,6 @@
 #include "sysemu/sysemu.h"
 #include "exec/windbgstub.h"
 #include "exec/windbgstub-utils.h"
-#include "exec/address-spaces.h"
 
 #define ENABLE_PARSER        WINDBG_DEBUG_ON && \
                              (ENABLE_WINDBG_PARSER || ENABLE_KERNEL_PARSER)
@@ -461,17 +460,16 @@ static void windbg_debug_ctx_handler(ParsingContext *ctx, FILE *out)
 
     case RESULT_CONTROL_PACKET:
         fprintf(out, "CATCH CONTROL PACKET: %s\n",
-                kd_get_packet_type_name(ctx->packet.PacketType));
+                KD_PKT_TYPE_NAME(ctx->packet.PacketType));
         break;
 
     case RESULT_DATA_PACKET:
         fprintf(out, "CATCH DATA PACKET: %s\n",
-                kd_get_packet_type_name(ctx->packet.PacketType));
+                KD_PKT_TYPE_NAME(ctx->packet.PacketType));
         fprintf(out, "Byte Count: %d\n", ctx->packet.ByteCount);
 
         if (ctx->packet.PacketType == PACKET_TYPE_KD_STATE_MANIPULATE) {
-            fprintf(out, "Api: %s\n",
-                    kd_get_api_name(ctx->data.m64.ApiNumber));
+            fprintf(out, "Api: %s\n", KD_API_NAME(ctx->data.m64.ApiNumber));
         }
 
         int i;
@@ -512,7 +510,7 @@ static void windbg_debug_ctx_handler_api(ParsingContext *ctx, FILE *out)
     case RESULT_DATA_PACKET:
         if (ctx->packet.PacketType == PACKET_TYPE_KD_STATE_MANIPULATE) {
             fprintf(out, "%s: %d : %s\n", ctx->name, packet_counter,
-                    kd_get_api_name(ctx->data.m64.ApiNumber));
+                    KD_API_NAME(ctx->data.m64.ApiNumber));
         }
         break;
 

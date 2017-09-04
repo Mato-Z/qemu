@@ -60,17 +60,16 @@
 #define FMT_ADDR "addr:0x" TARGET_FMT_lx
 #define FMT_ERR  "Error:%d"
 
-#define CAST(type, par) ((type) (par))
-#define UINT8_P(ptr) CAST(uint8_t *, ptr)
-#define UINT32_P(ptr) CAST(uint32_t *, ptr)
-#define FIELD_P(type, field, ptr) CAST(typeof_field(type, field) *, ptr)
-#define PTR(var) CAST(uint8_t *, &var)
+#define UINT8_P(ptr) ((uint8_t *) (ptr))
+#define UINT32_P(ptr) ((uint32_t *) (ptr))
+#define FIELD_P(type, field, ptr) ((typeof_field(type, field) *) (ptr))
+#define PTR(var) UINT8_P(&var)
 
 #define M64_SIZE sizeof(DBGKD_MANIPULATE_STATE64)
 
 #define sizeof_field(type, field) sizeof(((type *) NULL)->field)
 
-#define FROM_VADDR(cpu, addr, type) ({                         \
+#define READ_VMEM(cpu, addr, type) ({                              \
         type _t;                                                   \
         cpu_memory_rw_debug(cpu, addr, PTR( _t), sizeof(type), 0); \
         _t;                                                        \
@@ -157,9 +156,6 @@ void kd_api_unsupported(CPUState *cpu, PacketData *pd);
 
 SizedBuf kd_gen_exception_sc(CPUState *cpu);
 SizedBuf kd_gen_load_symbols_sc(CPUState *cpu);
-
-const char *kd_get_api_name(int id);
-const char *kd_get_packet_type_name(int id);
 
 void windbg_dump(const char *fmt, ...);
 bool windbg_on_load(void);
